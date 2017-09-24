@@ -17,9 +17,11 @@ from django.conf.urls import url
 from django.contrib import admin
 from django.views.generic import TemplateView
 
+from .views import HomeView, LogoutView, TwitterReturnView
+
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
-    url(r'^$',
-        TemplateView.as_view(template_name='twitterlytic/index.html'),
-        name='home'),
+    url(r'^$', HomeView.as_view(), name='home'),
+    url(r'^logout/$', LogoutView.as_view(), name='logout'),
+    url(r'^twitter_return/$', TwitterReturnView.as_view(), name='twitter_return'),
 ]

@@ -1,9 +1,18 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<h1>Hello world.</h1>
+<h1>Welcome to Twitterlytic.</h1>
 
-<p>
-  Initial page for Twitterlytic.
-</p>
+  {% if request.user.is_authenticated %}
+  <p>
+    Hi {{ user.username }}!
+  </p>
+  <form action="/logout/" method="post">
+      {% csrf_token %}
+      <input type="submit" class="btn btn-danger" value="Log out" />
+  </form>
+  {% else %}
+  <a class="btn btn-primary" href="{{ twitter_auth_url }}">
+    Connect Twitter</a>
+{% endif %}
 {% endblock content %}

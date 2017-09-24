@@ -20,7 +20,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 # See https://docs.djangoproject.com/en/1.11/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'x-o2tvvf4wm(5eh%7re+kq3coim%6u^139icdd8op7rryp625_'
+SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -126,3 +126,14 @@ STATICFILES_DIRS = [
 ]
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+# Custom backend for logging in.
+AUTHENTICATION_BACKENDS = (
+    # For login of a trusted user, without credentials.
+    'twitterlytic.backends.TrustedUserAuthenticationBackend',
+)
+
+# Settings for Tweepy
+TWEEPY_CONSUMER_TOKEN = os.getenv('TWITTER_CONSUMER_TOKEN')
+TWEEPY_CONSUMER_SECRET = os.getenv('TWITTER_CONSUMER_SECRET')
+TWEEPY_SETUP = (TWEEPY_CONSUMER_TOKEN and TWEEPY_CONSUMER_SECRET)

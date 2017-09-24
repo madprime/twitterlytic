@@ -1,2 +1,17 @@
+blessings==1.6
+bpython==0.16
+certifi==2017.7.27.1
+chardet==3.0.4
+curtsies==0.2.11
 Django==1.11.5
+greenlet==0.4.12
+idna==2.6
+oauthlib==2.0.4
+Pygments==2.2.0
 pytz==2017.2
+requests==2.18.4
+requests-oauthlib==0.8.0
+six==1.11.0
+tweepy==3.5.0
+urllib3==1.22
+wcwidth==0.1.7
