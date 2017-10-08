@@ -25,9 +25,14 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False if os.getenv('DEBUG', '').lower() == 'false' else True
 
-ALLOWED_HOSTS = []
+# Allow all host headers if this is running as a Heroku app.
+HEROKU_APP = True if os.getenv('HEROKU_APP', '').lower() == 'true' else False
+if HEROKU_APP:
+    ALLOWED_HOSTS = ['*']
+else:
+    ALLOWED_HOSTS = []
 
 
 # Application definition
@@ -166,3 +171,4 @@ AUTHENTICATION_BACKENDS = (
 TWEEPY_CONSUMER_TOKEN = os.getenv('TWITTER_CONSUMER_TOKEN')
 TWEEPY_CONSUMER_SECRET = os.getenv('TWITTER_CONSUMER_SECRET')
 TWEEPY_SETUP = (TWEEPY_CONSUMER_TOKEN and TWEEPY_CONSUMER_SECRET)
+assert TWEEPY_SETUP

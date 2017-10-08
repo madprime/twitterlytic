@@ -7,21 +7,26 @@ have the @shared_task decorator.
 """
 # absolute_import prevents conflicts between project celery.py file
 # and the celery package.
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 import os
 
 from celery import Celery
 
-from django.conf import settings
+
+# set the default Django settings module for the 'celery' program.
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'twitterlytic.settings')
 
 CELERY_BROKER_URL = os.getenv('CLOUDAMQP_URL', 'amqp://')
 
-# set the default Django settings module for the 'celery' program.
-os.environ.setdefault('DJANGO_SETTINGS_MODULE',
-                      'twitterlytic.settings')
+app = Celery('twitterlytic')
 
-app = Celery('oh_data_source', broker=CELERY_BROKER_URL)
+# Using a string here means the worker doesn't have to serialize
+# the configuration object to child processes.
+# - namespace='CELERY' means all celery-related configuration keys
+#   should have a `CELERY_` prefix.
+app.config_from_object('django.conf:settings', namespace='CELERY')
+app.autodiscover_tasks()
 
 # Set up Celery with Heroku CloudAMQP (or AMQP in local dev).
 app.conf.update({
@@ -34,13 +39,10 @@ app.conf.update({
     'CELERY_RESULT_BACKEND': None,
     'CELERY_SEND_EVENTS': False,
     'CELERY_EVENT_QUEUE_EXPIRES': 60,
+
+    # Recommended by Heroku
+    'CELERY_TASK_SERIALIZER': 'json',
 })
-
-
-# Using a string here means the worker will not have to
-# pickle the object when using Windows.
-app.config_from_object('django.conf:settings')
-app.autodiscover_tasks(lambda: settings.INSTALLED_APPS)
 
 
 @app.task(bind=True)

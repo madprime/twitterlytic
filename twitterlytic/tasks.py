@@ -26,6 +26,11 @@ logger = logging.getLogger(__name__)
 
 
 @shared_task
+def test_task():
+    print("TEST TASK CALLED AND EXECUTED")
+
+
+@shared_task
 def get_followers_and_friends(target_id, authed_id, num_submit=0):
     """
     Retrieve all follower profiles for a Twitter profile.
@@ -35,7 +40,7 @@ def get_followers_and_friends(target_id, authed_id, num_submit=0):
     api = auth_profile.get_api()
 
     try:
-        target_profile.refresh_twitter_data(api=api, max_sec_stale=86400)
+        target_profile.refresh_twitter_data(api=api)
     except tweepy.error.RateLimitError:
         num_submit += 1
         get_followers_and_friends.apply_async(

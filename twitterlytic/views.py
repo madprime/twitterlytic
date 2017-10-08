@@ -6,6 +6,7 @@ from django.views.generic import DetailView, TemplateView, View
 import tweepy
 
 from .models import TwitterProfile, TwitterRelationship, GENDER_CHOICES
+from .celery import debug_task
 from .tasks import get_followers_and_friends
 from .utils import get_tweepy_auth
 
@@ -49,6 +50,7 @@ class BaseProfileView(DetailView):
     slug_field = 'username'
 
     def get_context_data(self, *args, **kwargs):
+        print("IN HOME")
         context_data = super(
             BaseProfileView, self).get_context_data(*args, **kwargs)
 
@@ -79,7 +81,6 @@ class ProfileView(BaseProfileView):
     def post(self, request, *args, **kwargs):
         profile = self.get_object()
         if self.request.user.is_authenticated:
-            api = self.request.user.twitterprofile.get_api()
             get_followers_and_friends.delay(
                 target_id=profile.id,
                 authed_id=self.request.user.twitterprofile.id)
@@ -88,7 +89,6 @@ class ProfileView(BaseProfileView):
 
 class ProfileViewJSON(BaseProfileView):
     def render_to_response(self, context, **response_kwargs):
-        profile = context['object'].serialized()
         data = {'profile': context['object'].serialized(),
                 'following_counts': context['following_counts'],
                 'followers_counts': context['followers_counts']}
@@ -104,6 +104,7 @@ class TwitterReturnView(View):
     """
 
     def get(self, request, *args, **kwargs):
+        print("IN TWITTER RETURN")
 
         # This is unexpected? Return home if already logged in.
         if request.user.is_authenticated:
@@ -116,14 +117,17 @@ class TwitterReturnView(View):
         verifier = self.request.GET['oauth_verifier']
 
         (access_token, access_token_secret) = auth.get_access_token(verifier)
+        print("GOT TOKENS")
         # auth.set_access_token(token, token_secret)
         api = tweepy.API(auth)
         user_data = api.me()
+        print("GOT MY DATA")
 
         # Get or create an account. Add core Twitter data.
         user, created = User.objects.get_or_create(
             username=user_data.screen_name)
         user.save()
+        print("MADE USER")
         profile, _ = TwitterProfile.objects.get_or_create(
             twitter_id=user_data.id)
         profile.username = user_data.screen_name
@@ -131,12 +135,18 @@ class TwitterReturnView(View):
         profile.oauth_token_secret = access_token_secret
         profile.user = user
         profile.save()
-        profile.refresh_twitter_data(api=api, max_sec_stale=86400)
+        print("MADE PROFILE")
+        import sys
+        print(sys.version_info)
+        print("CALLING EASY TASK")
         get_followers_and_friends.delay(
-            target_id=profile.id, authed_id=profile.id)
+            target_id=profile.id,
+            authed_id=profile.id)
+        print("STARTED TASK")
 
         # Log in user.
         user.backend = 'twitterlytic.backends.TrustedUserAuthenticationBackend'
         login(request, user)
+        print("LOGIN DONE")
 
         return HttpResponseRedirect(reverse_lazy('home'))
