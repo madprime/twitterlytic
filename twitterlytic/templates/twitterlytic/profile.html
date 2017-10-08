@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block extra_js %}
+<script src="https://d3js.org/d3.v4.min.js"></script>
+<script src="{% static 'js/piechart.js' %}"></script>
+{% endblock extra_js %}
+
+{% block content %}
+<h1>
+  <span id='twitter-name'>{{object.name}}</span>
+  (@<span id='twitter-username'>{{object.username}}</span>)
+</h1>
+
+  {% if request.user.is_authenticated %}
+  <form action="{% url 'profile' object.username %}" method="post">
+    {% csrf_token %}
+    <input type="submit" value="Analyze/Refresh" />
+  </form>
+  {% endif %}
+
+  <p>
+    {{ object.description }}
+  </p>
+
+  <p>
+    <b>Inferred gender:</b> {{ object.gender }}
+  </p>
+
+  <h2>Followers</h2>
+  <div id="chart-followers"></div>
+
+  <h2>Following</h2>
+  <div id="chart-following"></div>
+
+{% endblock content %}

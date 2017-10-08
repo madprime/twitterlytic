@@ -1,11 +1,12 @@
 from django.contrib.auth import get_user_model, login, logout
 from django.core.urlresolvers import reverse_lazy
-from django.http import HttpResponseRedirect
-from django.views.generic import TemplateView, View
+from django.http import HttpResponseRedirect, JsonResponse
+from django.views.generic import DetailView, TemplateView, View
 
 import tweepy
 
-from .models import TwitterProfile
+from .models import TwitterProfile, TwitterRelationship, GENDER_CHOICES
+from .tasks import get_followers_and_friends
 from .utils import get_tweepy_auth
 
 User = get_user_model()
@@ -39,6 +40,64 @@ class LogoutView(TemplateView):
         return HttpResponseRedirect(reverse_lazy('home'))
 
 
+class BaseProfileView(DetailView):
+    """
+    Twitter profile information.
+    """
+    template_name = 'twitterlytic/profile.html'
+    model = TwitterProfile
+    slug_field = 'username'
+
+    def get_context_data(self, *args, **kwargs):
+        context_data = super(
+            BaseProfileView, self).get_context_data(*args, **kwargs)
+
+        following = [rel.followed for rel in
+                     TwitterRelationship.objects.filter(follower=self.object)]
+        followers = [rel.follower for rel in
+                     TwitterRelationship.objects.filter(followed=self.object)]
+
+        following_counts = {k: 0 for k in dict(GENDER_CHOICES).keys()}
+        followers_counts = {k: 0 for k in dict(GENDER_CHOICES).keys()}
+
+        for profile in following:
+            following_counts[profile.gender] += 1
+        for profile in followers:
+            followers_counts[profile.gender] += 1
+
+        context_data.update({
+            'following': following,
+            'followers': followers,
+            'following_counts': following_counts,
+            'followers_counts': followers_counts,
+        })
+
+        return context_data
+
+
+class ProfileView(BaseProfileView):
+    def post(self, request, *args, **kwargs):
+        profile = self.get_object()
+        if self.request.user.is_authenticated:
+            api = self.request.user.twitterprofile.get_api()
+            get_followers_and_friends.delay(
+                target_id=profile.id,
+                authed_id=self.request.user.twitterprofile.id)
+        return self.get(request, *args, **kwargs)
+
+
+class ProfileViewJSON(BaseProfileView):
+    def render_to_response(self, context, **response_kwargs):
+        profile = context['object'].serialized()
+        data = {'profile': context['object'].serialized(),
+                'following_counts': context['following_counts'],
+                'followers_counts': context['followers_counts']}
+        return JsonResponse(
+            data,
+            **response_kwargs
+        )
+
+
 class TwitterReturnView(View):
     """
     Handle return from Twitter authentication.
@@ -66,13 +125,15 @@ class TwitterReturnView(View):
             username=user_data.screen_name)
         user.save()
         profile, _ = TwitterProfile.objects.get_or_create(
-            username=user_data.screen_name, twitter_id=user_data.id)
+            twitter_id=user_data.id)
+        profile.username = user_data.screen_name
         profile.oauth_token = access_token
         profile.oauth_token_secret = access_token_secret
         profile.user = user
         profile.save()
-        profile.refresh_twitter_data(api=api)
-        profile.save()
+        profile.refresh_twitter_data(api=api, max_sec_stale=86400)
+        get_followers_and_friends.delay(
+            target_id=profile.id, authed_id=profile.id)
 
         # Log in user.
         user.backend = 'twitterlytic.backends.TrustedUserAuthenticationBackend'
