@@ -22,6 +22,7 @@ class HomeView(TemplateView):
 
         auth = get_tweepy_auth()
         context_data['twitter_auth_url'] = auth.get_authorization_url()
+        self.request.session['request_token'] = auth.request_token
 
         return context_data
 
@@ -50,13 +51,13 @@ class TwitterReturnView(View):
             return HttpResponseRedirect(reverse_lazy('home'))
 
         # Handle the Twitter return, get profile data.
-        oauth_token = self.request.GET['oauth_token']
-        oauth_verifier = self.request.GET['oauth_verifier']
         auth = get_tweepy_auth()
-        auth.request_token = {'oauth_token': oauth_token,
-                              'oauth_token_secret': oauth_verifier}
-        (token, token_secret) = auth.get_access_token(oauth_verifier)
-        auth.set_access_token(token, token_secret)
+        request_token = self.request.session.pop('request_token')
+        auth.request_token = request_token
+        verifier = self.request.GET['oauth_verifier']
+
+        (access_token, access_token_secret) = auth.get_access_token(verifier)
+        # auth.set_access_token(token, token_secret)
         api = tweepy.API(auth)
         user_data = api.me()
 
@@ -66,9 +67,11 @@ class TwitterReturnView(View):
         user.save()
         profile, _ = TwitterProfile.objects.get_or_create(
             username=user_data.screen_name, twitter_id=user_data.id)
-        profile.oauth_token = token
-        profile.oauth_token_secret = token_secret
+        profile.oauth_token = access_token
+        profile.oauth_token_secret = access_token_secret
         profile.user = user
+        profile.save()
+        profile.refresh_twitter_data(api=api)
         profile.save()
 
         # Log in user.

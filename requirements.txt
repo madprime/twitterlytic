@@ -3,10 +3,12 @@ bpython==0.16
 certifi==2017.7.27.1
 chardet==3.0.4
 curtsies==0.2.11
+dj-database-url==0.4.2
 Django==1.11.5
 greenlet==0.4.12
 idna==2.6
 oauthlib==2.0.4
+psycopg2==2.7.3.1
 Pygments==2.2.0
 pytz==2017.2
 requests==2.18.4
