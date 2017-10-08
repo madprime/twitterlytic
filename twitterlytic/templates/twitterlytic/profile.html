@@ -8,19 +8,19 @@
 
 {% block content %}
 <h1>
-  <span id='twitter-name'>{{object.name}}</span>
-  (@<span id='twitter-username'>{{object.username}}</span>)
+  <span id='twitter-name'>{{object.show_data.name}}</span>
+  (@<span id='twitter-username'>{{object.show_data.screen_name}}</span>)
 </h1>
 
   {% if request.user.is_authenticated %}
-  <form action="{% url 'profile' object.username %}" method="post">
+  <form action="{% url 'profile' object.show_data.screen_name %}" method="post">
     {% csrf_token %}
     <input type="submit" value="Analyze/Refresh" />
   </form>
   {% endif %}
 
   <p>
-    {{ object.description }}
+    {{ object.show_data.description }}
   </p>
 
   <p>
@@ -28,9 +28,41 @@
   </p>
 
   <h2>Followers</h2>
-  <div id="chart-followers"></div>
+  <div class="row">
+    <div class="col-md-6">
+      <div style="width:100%;overflow:auto; max-height:300px;">
+        <table>
+          {% for follower in followers %}
+          <tr>
+            <td><a href="{% url 'profile' follower.follower.show_data.screen_name %}">{{follower.follower.show_data.screen_name}}</a></td>
+            <td>{{follower.follower.show_data.followers_count}}</td>
+          </tr>
+          {% endfor %}
+        </table>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div id="chart-followers"></div>
+    </div>
+  </div>
 
   <h2>Following</h2>
-  <div id="chart-following"></div>
+  <div class="row">
+    <div class="col-md-6">
+      <div style="width:100%;overflow:auto; max-height:300px;">
+        <table>
+          {% for followed in following %}
+          <tr>
+            <td><a href="{% url 'profile' followed.followed.show_data.screen_name %}">{{followed.followed.show_data.screen_name}}</a></td>
+            <td>{{followed.followed.show_data.followers_count}}</td>
+          </tr>
+          {% endfor %}
+        </table>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div id="chart-following"></div>
+    </div>
+  </div>
 
 {% endblock content %}

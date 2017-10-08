@@ -6,13 +6,11 @@ body {
 
 #chart-followers {
   height: 360px;
-  margin: 0 auto;                                               /* NEW */
   position: relative;
   width: 360px;
 }
 #chart-following {
   height: 360px;
-  margin: 0 auto;                                               /* NEW */
   position: relative;
   width: 360px;
 }
@@ -35,9 +33,9 @@ body {
   font-size: 12px;
 }
 rect {
-  cursor: pointer;                                              /* NEW */
+  cursor: pointer;
   stroke-width: 2;
 }
-rect.disabled {                                                 /* NEW */
-  fill: transparent !important;                                 /* NEW */
+rect.disabled {
+  fill: transparent !important;
 }

@@ -21,9 +21,9 @@ from .views import HomeView, LogoutView, TwitterReturnView, ProfileView, Profile
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^$', HomeView.as_view(), name='home'),
-    url(r'^profile/(?P<slug>[a-zA-Z0-9]*)/$', ProfileView.as_view(),
+    url(r'^profile/(?P<slug>[a-z_A-Z0-9]*)/$', ProfileView.as_view(),
         name='profile'),
-    url(r'^profile/(?P<slug>[a-zA-Z0-9]*)/json/$', ProfileViewJSON.as_view(),
+    url(r'^profile/(?P<slug>[a-z_A-Z0-9]*)/json/$', ProfileViewJSON.as_view(),
         name='profile-json'),
     url(r'^logout/$', LogoutView.as_view(), name='logout'),
     url(r'^twitter_return/$', TwitterReturnView.as_view(),

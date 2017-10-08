@@ -19,15 +19,10 @@ from celery import shared_task
 import tweepy
 
 from .models import TwitterProfile, TwitterRelationship
-
+from .utils import RateExceededError
 
 # Set up logging.
 logger = logging.getLogger(__name__)
-
-
-@shared_task
-def test_task():
-    print("TEST TASK CALLED AND EXECUTED")
 
 
 @shared_task
@@ -40,8 +35,8 @@ def get_followers_and_friends(target_id, authed_id, num_submit=0):
     api = auth_profile.get_api()
 
     try:
-        target_profile.refresh_twitter_data(api=api)
-    except tweepy.error.RateLimitError:
+        target_profile.refresh_full_data(auth_profile=auth_profile)
+    except RateExceededError:
         num_submit += 1
         get_followers_and_friends.apply_async(
             kwargs={'target_id': target_id,
@@ -51,38 +46,37 @@ def get_followers_and_friends(target_id, authed_id, num_submit=0):
         print("Cap hit, waiting 15 minutes...")
         return
 
-    print('Username: {}'.format(target_profile.username))
-    print('Followers IDs: {}'.format(target_profile.followers_ids))
+    print('Retrieving followers for {}...'.format(target_profile.show_data['screen_name']))
     for twitter_id in target_profile.followers_ids:
-        print(twitter_id)
         profile, _ = TwitterProfile.objects.get_or_create(
             twitter_id=twitter_id)
+        print("Trying ID {}...".format(twitter_id))
         try:
-            profile.refresh_twitter_data(api=api, max_sec_stale=86400)
+            profile.refresh_show_data(auth_profile=auth_profile,
+                                      max_sec_stale=86400)
             TwitterRelationship.objects.get_or_create(
                 followed=target_profile, follower=profile)
-            print("Done with {}...".format(profile.username))
-        except tweepy.error.RateLimitError:
+        except RateExceededError:
             num_submit += 1
             get_followers_and_friends.apply_async(
                 kwargs={'target_id': target_id,
                         'authed_id': authed_id,
                         'num_submit': num_submit},
                 countdown=900)
-            print("Cap hit, waiting 15 minutes...")
+            print('Cap hit, waiting 15 minutes...')
             return
 
-    print('Username: {}'.format(target_profile.username))
-    print('Followers IDs: {}'.format(target_profile.followers_ids))
+    print('Retrieving friends for {}...'.format(target_profile.show_data['screen_name']))
     for twitter_id in target_profile.friends_ids:
         profile, _ = TwitterProfile.objects.get_or_create(
             twitter_id=twitter_id)
+        print("Trying ID {}...".format(twitter_id))
         try:
-            profile.refresh_twitter_data(api=api, max_sec_stale=86400)
+            profile.refresh_show_data(auth_profile=auth_profile,
+                                      max_sec_stale=86400)
             TwitterRelationship.objects.get_or_create(
                 followed=profile, follower=target_profile)
-            print("Done with {}...".format(profile.username))
-        except tweepy.error.RateLimitError:
+        except RateExceededError:
             num_submit += 1
             get_followers_and_friends.apply_async(
                 kwargs={'target_id': target_id,
