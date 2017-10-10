@@ -7,12 +7,20 @@
   <p>
     Hi {{ user.username }}!
   </p>
+  <p>
+  <a class="btn btn-primary btn-lg"
+    href="{% url 'profile' user.twitterprofile.username %}">
+    Your profile analysis</a>
+  </p>
+
+  <p>
   <form action="/logout/" method="post">
       {% csrf_token %}
-      <input type="submit" class="btn btn-danger" value="Log out" />
+      <input type="submit" class="btn btn-danger btn-sm" value="Log out" />
   </form>
+  </p>
   {% else %}
-  <a class="btn btn-primary" href="{{ twitter_auth_url }}">
+  <a class="btn btn-primary btn-lg" href="{{ twitter_auth_url }}">
     Connect Twitter</a>
 {% endif %}
 {% endblock content %}
