@@ -49,7 +49,10 @@ def guess_gender(name, description):
         return 'male'
     elif 'they/them' in description:
         return 'andy'
-    return gender_guesser.get_gender(name.split()[0].title())
+    try:
+        return gender_guesser.get_gender(name.split()[0].title())
+    except IndexError:
+        return 'unknown'
 
 
 class TwitterProfile(models.Model):
