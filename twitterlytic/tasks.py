@@ -50,7 +50,6 @@ def get_followers_and_friends(target_id, authed_id, num_submit=0):
     for twitter_id in target_profile.followers_ids:
         profile, _ = TwitterProfile.objects.get_or_create(
             twitter_id=twitter_id)
-        print("Trying ID {}...".format(twitter_id))
         try:
             profile.refresh_show_data(auth_profile=auth_profile,
                                       max_sec_stale=86400)
@@ -70,7 +69,6 @@ def get_followers_and_friends(target_id, authed_id, num_submit=0):
     for twitter_id in target_profile.friends_ids:
         profile, _ = TwitterProfile.objects.get_or_create(
             twitter_id=twitter_id)
-        print("Trying ID {}...".format(twitter_id))
         try:
             profile.refresh_show_data(auth_profile=auth_profile,
                                       max_sec_stale=86400)
@@ -85,3 +83,4 @@ def get_followers_and_friends(target_id, authed_id, num_submit=0):
                 countdown=900)
             print("Cap hit, waiting 15 minutes...")
             return
+    print("Done with analysis for {}".format(target_profile.show_data['screen_name']))
