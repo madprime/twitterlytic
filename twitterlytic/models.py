@@ -63,7 +63,7 @@ class TwitterProfile(models.Model):
     oauth_token_secret = models.CharField(max_length=45, blank=True)
 
     show_data = JSONField(default={})
-    username = models.CharField(max_length=15)
+    username = models.CharField(max_length=20)
     gender = models.CharField(
         max_length=13,
         choices=GENDER_CHOICES,
