@@ -17,12 +17,12 @@ User = get_user_model()
 gender_guesser = gender.Detector()
 
 GENDER_CHOICES = (
-    ('unknown', 'unrecognized'),
-    ('andy', 'either'),
-    ('male', 'male (probably)'),
-    ('female', 'female (probably)'),
-    ('mostly_male', 'male (maybe)'),
-    ('mostly_female', 'female (maybe)'),
+    ('unknown', 'Unknown'),
+    ('andy', 'Ambig/Neutral'),
+    ('male', 'Male'),
+    ('female', 'Female'),
+    ('mostly_male', 'Likely male'),
+    ('mostly_female', 'Likely female'),
 )
 
 GENDER_COUNTS_BLANK = {k: 0 for k in dict(GENDER_CHOICES).keys()}
@@ -43,11 +43,11 @@ SHOW_DATA_LIST = [
 
 
 def guess_gender(name, description):
-    if 'she/her' in description:
+    if 'she/her' in description.lower():
         return 'female'
-    elif 'he/him' in description:
+    elif 'he/him' in description.lower():
         return 'male'
-    elif 'they/them' in description:
+    elif 'they/them' in description.lower():
         return 'andy'
     try:
         return gender_guesser.get_gender(name.split()[0].title())
@@ -106,20 +106,22 @@ class TwitterProfile(models.Model):
                 for error in req.json()['errors']:
                     if error['code'] == 88:
                         raise RateExceededError
+            print(req.json())
             raise Exception
         return req
 
-    def refresh_show_data(self, auth_profile, max_sec_stale=0):
+    def refresh_show_data(self, auth_profile, data=None, max_sec_stale=0):
         if self.last_show_refresh:
             delta = timezone.now() - self.last_show_refresh
             if delta.seconds <= max_sec_stale:
                 return
-        req = auth_profile.api_call(
-            path='users/show.json',
-            params={'user_id': self.twitter_id},
-            auth=auth_profile.get_auth(),
-            )
-        data = req.json()
+        if not data:
+            req = auth_profile.api_call(
+                path='users/show.json',
+                params={'user_id': self.twitter_id},
+                auth=auth_profile.get_auth(),
+                )
+            data = req.json()
         results = {k: data[k] for k in data.keys() if k in SHOW_DATA_LIST}
         self.show_data = results
         self.username = self.show_data['screen_name']

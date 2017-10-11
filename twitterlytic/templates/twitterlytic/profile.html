@@ -24,47 +24,48 @@
   </p>
 
   <p>
-    <b>Inferred gender:</b> {{ object.gender }}<br>
+    <b>Inferred gender:</b> {{ object.get_gender_display }}<br>
     <b>Follower count:</b> {{ object.show_data.followers_count }}<br>
     <b>Following count:</b> {{ object.show_data.friends_count }}
   </p>
 
-  <h2>Followers</h2>
-  <div class="row">
+  <div class="row" style="margin-bottom:30px;">
     <div class="col-md-6">
-      <div style="width:100%;overflow:auto; max-height:300px;">
-        <table>
-          {% for follower in followers %}
-          <tr>
-            <td><a href="{% url 'profile' follower.follower.show_data.screen_name %}">{{follower.follower.show_data.screen_name}}</a></td>
-            <td>{{follower.follower.show_data.followers_count}}</td>
-          </tr>
-          {% endfor %}
-        </table>
-      </div>
+      <h2>Following</h2>
+      <div id="chart-following"></div>
     </div>
     <div class="col-md-6">
+      <h2>Followers</h2>
       <div id="chart-followers"></div>
     </div>
   </div>
 
-  <h2>Following</h2>
-  <div class="row">
-    <div class="col-md-6">
-      <div style="width:100%;overflow:auto; max-height:300px;">
-        <table>
-          {% for followed in following %}
-          <tr>
-            <td><a href="{% url 'profile' followed.followed.show_data.screen_name %}">{{followed.followed.show_data.screen_name}}</a></td>
-            <td>{{followed.followed.show_data.followers_count}}</td>
-          </tr>
-          {% endfor %}
-        </table>
-      </div>
-    </div>
-    <div class="col-md-6">
-      <div id="chart-following"></div>
-    </div>
+  <h2>Following list</h2>
+  <div style="width:100%;overflow:auto; max-height:300px;">
+    <table>
+      {% for followed in following %}
+      <tr>
+        <td><a href="{% url 'profile' followed.followed.show_data.screen_name %}">{{followed.followed.show_data.screen_name}}</a></td>
+        <td>{{ followed.followed.show_data.name }}</td>
+        <td>{{ followed.followed.get_gender_display }}</td>
+        <td>{{followed.followed.show_data.followers_count}}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+
+  <h2>Followers list</h2>
+  <div style="width:100%;overflow:auto; max-height:350px;">
+    <table>
+      {% for follower in followers %}
+      <tr>
+        <td><a href="{% url 'profile' follower.follower.show_data.screen_name %}">{{follower.follower.show_data.screen_name}}</a></td>
+        <td>{{ follower.follower.show_data.name }}</td>
+        <td>{{ follower.follower.get_gender_display }}</td>
+        <td>{{follower.follower.show_data.followers_count}}</td>
+      </tr>
+      {% endfor %}
+    </table>
   </div>
 
 {% endblock content %}
