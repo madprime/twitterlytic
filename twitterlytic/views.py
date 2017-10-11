@@ -1,5 +1,6 @@
 import copy
 
+from django.conf import settings
 from django.contrib.auth import get_user_model, login, logout
 from django.core.urlresolvers import reverse_lazy
 from django.http import HttpResponseRedirect, JsonResponse
@@ -54,12 +55,13 @@ class BaseProfileView(DetailView):
         context_data = super(
             BaseProfileView, self).get_context_data(*args, **kwargs)
 
-        self.following = TwitterRelationship.objects.filter(follower=self.object)
-        self.followers = self.object.followed.all()
+        self.following = TwitterRelationship.objects.filter(follower=self.object).order_by('?')[:settings.TWITTERLYTIC_PROFILE_DISPLAY_MAX]
+        self.followers = self.object.followed.order_by('?')[:settings.TWITTERLYTIC_PROFILE_DISPLAY_MAX]
 
         context_data.update({
             'following': self.following,
             'followers': self.followers,
+            'max_display': settings.TWITTERLYTIC_PROFILE_DISPLAY_MAX,
         })
 
         return context_data

@@ -29,6 +29,12 @@
     <b>Following count:</b> {{ object.show_data.friends_count }}
   </p>
 
+  {% if object.show_data.followers_count > max_display or object.show_data.friends_count > max_display %}
+  <p>
+    <i><b>Note:</b> For lists with more than {{ max_display }} profiles, a random
+      subset of {{ max_display }} profiles is selected for analysis and display.</i>
+  </p>
+  {% endif %}
   <div class="row" style="margin-bottom:30px;">
     <div class="col-md-6">
       <h2>Following</h2>
@@ -67,5 +73,4 @@
       {% endfor %}
     </table>
   </div>
-
 {% endblock content %}
