@@ -13,6 +13,7 @@ import logging
 
 # import arrow
 from celery import shared_task
+from django.conf import settings
 from django.utils import timezone
 # from django.utils import lorem_ipsum
 # import requests
@@ -76,6 +77,11 @@ def get_followers_and_friends(target_id, authed_id, num_submit=0):
     """
     Retrieve all connected profiles for a Twitter profile.
     """
+    if num_submit > settings.TWITTERLYTIC_MAX_RESUBMIT:
+        print("Max analyses ({}) hit for {}. Aborting.".format(
+            settings.TWITTERLYTIC_MAX_RESUBMIT,
+            target_profile.show_data['screen_name']))
+        return
     target_profile = TwitterProfile.objects.get(id=target_id)
     auth_profile = TwitterProfile.objects.get(id=authed_id)
 
