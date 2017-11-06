@@ -47,10 +47,20 @@ def update_connections(target_profile, auth_profile, reltype=None):
     assert reltype in ['friend', 'follower']
     print('Retrieving {}s for {}...'.format(reltype, target_profile.username))
     ids_list = []
+
     if reltype == 'friend':
         twitter_id_list = target_profile.friends_ids
+        old_rels = TwitterRelationship.objects.filter(follower=target_profile)
+        for rel in old_rels:
+            if rel.followed.twitter_id not in target_profile.friends_ids:
+                rel.delete()
+
     elif reltype == 'follower':
         twitter_id_list = target_profile.followers_ids
+        old_rels = TwitterRelationship.objects.filter(followed=target_profile)
+        for rel in old_rels:
+            if rel.follower.twitter_id not in target_profile.followers_ids:
+                rel.delete()
 
     for twitter_id in twitter_id_list:
         profile, _ = TwitterProfile.objects.get_or_create(
@@ -77,12 +87,12 @@ def get_followers_and_friends(target_id, authed_id, num_submit=0):
     """
     Retrieve all connected profiles for a Twitter profile.
     """
+    target_profile = TwitterProfile.objects.get(id=target_id)
     if num_submit > settings.TWITTERLYTIC_MAX_RESUBMIT:
         print("Max analyses ({}) hit for {}. Aborting.".format(
             settings.TWITTERLYTIC_MAX_RESUBMIT,
             target_profile.show_data['screen_name']))
         return
-    target_profile = TwitterProfile.objects.get(id=target_id)
     auth_profile = TwitterProfile.objects.get(id=authed_id)
 
     try:
