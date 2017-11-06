@@ -27,8 +27,7 @@ SOFTWARE.
 (function(d3) {
   'use strict';
   var username = document.getElementById('twitter-username').innerHTML;
-  d3.json("/profile/" + username + "/json/", function(data) {
-    console.log(data);
+  d3.json("/profile/" + username + "/counts.json", function(data) {
     var dataset_followers = [
       { label: 'Female', count: data.followers_counts.female },
       { label: 'Likely female', count: data.followers_counts.mostly_female },

@@ -8,7 +8,8 @@ from django.views.generic import DetailView, TemplateView, View
 
 import tweepy
 
-from .models import TwitterProfile, TwitterRelationship, GENDER_COUNTS_BLANK
+from .models import (TwitterProfile, TwitterRelationship, GENDER_CHOICES,
+                     GENDER_COUNTS_BLANK)
 from .tasks import get_followers_and_friends
 from .utils import get_tweepy_auth
 
@@ -51,21 +52,6 @@ class BaseProfileView(DetailView):
     model = TwitterProfile
     slug_field = 'username'
 
-    def get_context_data(self, *args, **kwargs):
-        context_data = super(
-            BaseProfileView, self).get_context_data(*args, **kwargs)
-
-        self.following = TwitterRelationship.objects.filter(follower=self.object).order_by('?')[:settings.TWITTERLYTIC_PROFILE_DISPLAY_MAX]
-        self.followers = self.object.followed.order_by('?')[:settings.TWITTERLYTIC_PROFILE_DISPLAY_MAX]
-
-        context_data.update({
-            'following': self.following,
-            'followers': self.followers,
-            'max_display': settings.TWITTERLYTIC_PROFILE_DISPLAY_MAX,
-        })
-
-        return context_data
-
 
 class ProfileView(BaseProfileView):
     def post(self, request, *args, **kwargs):
@@ -77,19 +63,63 @@ class ProfileView(BaseProfileView):
         return self.get(request, *args, **kwargs)
 
 
-class ProfileViewJSON(BaseProfileView):
+class ProfileCountsJSON(BaseProfileView):
     def render_to_response(self, context, **response_kwargs):
-        following_counts = copy.deepcopy(GENDER_COUNTS_BLANK)
-        followers_counts = copy.deepcopy(GENDER_COUNTS_BLANK)
-
-        for rel in self.following:
-            following_counts[rel.followed.gender] += 1
-        for rel in self.followers:
-            followers_counts[rel.follower.gender] += 1
+        following_genders = list(
+            TwitterRelationship.objects.filter(
+                follower=self.object).values_list(
+                'followed__gender', flat=True))
+        following_counts = {g: following_genders.count(g) for g in
+                            dict(GENDER_CHOICES).keys()}
+        followers_genders = list(self.object.followed.values_list(
+            'follower__gender', flat=True))
+        followers_counts = {g: followers_genders.count(g) for g in
+                            dict(GENDER_CHOICES).keys()}
 
         data = {'profile': context['object'].serialized(),
                 'following_counts': following_counts,
                 'followers_counts': followers_counts}
+        return JsonResponse(
+            data,
+            **response_kwargs
+        )
+
+
+class ProfileFollowingJSON(BaseProfileView):
+    def render_to_response(self, context, **response_kwargs):
+        following = TwitterRelationship.objects.filter(
+            follower=self.object)
+        id_idx = 1
+        data = {'data': []}
+        for rel in following:
+            data['data'].append({
+                'id': str(id_idx),
+                'username': rel.followed.username,
+                'name': rel.followed.show_data['name'],
+                'gender': rel.followed.gender,
+                'followers': str(rel.followed.show_data['followers_count']),
+            })
+            id_idx += 1
+        return JsonResponse(
+            data,
+            **response_kwargs
+        )
+
+
+class ProfileFollowersJSON(BaseProfileView):
+    def render_to_response(self, context, **response_kwargs):
+        followers = self.object.followed.all()
+        id_idx = 1
+        data = {'data': []}
+        for rel in followers:
+            data['data'].append({
+                'id': str(id_idx),
+                'username': rel.follower.username,
+                'name': rel.follower.show_data['name'],
+                'gender': rel.follower.gender,
+                'followers': str(rel.follower.show_data['followers_count']),
+            })
+            id_idx += 1
         return JsonResponse(
             data,
             **response_kwargs

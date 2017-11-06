@@ -4,12 +4,13 @@
 {% block extra_js %}
 <script src="https://d3js.org/d3.v4.min.js"></script>
 <script src="{% static 'js/piechart.js' %}"></script>
+<script src="{% static 'js/profile-tables.js' %}"></script>
 {% endblock extra_js %}
 
 {% block content %}
 <h1>
   <span id='twitter-name'>{{object.show_data.name}}</span>
-  (@<span id='twitter-username'>{{object.show_data.screen_name}}</span>)
+  (<a href="https://twitter.com/{{ object.show_data.screen_name }}">@<span id='twitter-username'>{{object.show_data.screen_name}}</span></a>)
 </h1>
 
   {% if request.user.is_authenticated %}
@@ -47,30 +48,47 @@
   </div>
 
   <h2>Following list</h2>
-  <div style="width:100%;overflow:auto; max-height:300px;">
-    <table>
-      {% for followed in following %}
-      <tr>
-        <td><a href="{% url 'profile' followed.followed.show_data.screen_name %}">{{followed.followed.show_data.screen_name}}</a></td>
-        <td>{{ followed.followed.show_data.name }}</td>
-        <td>{{ followed.followed.get_gender_display }}</td>
-        <td>{{followed.followed.show_data.followers_count}}</td>
-      </tr>
-      {% endfor %}
+
+  <div style="width:100%; overflow:auto;">
+    <table id="profile-table-following" class="display" cellspacing="0" width="100%">
+      <thead>
+        <tr>
+          <th>Username</th>
+          <th>Name</th>
+          <th>Inf. gender</th>
+          <th># Followers</th>
+        </tr>
+      </thead>
+      <tfoot>
+        <tr>
+          <th>Username</th>
+          <th>Name</th>
+          <th>Inf. gender</th>
+          <th># Followers</th>
+        </tr>
+      </tfoot>
     </table>
   </div>
 
   <h2>Followers list</h2>
-  <div style="width:100%;overflow:auto; max-height:350px;">
-    <table>
-      {% for follower in followers %}
-      <tr>
-        <td><a href="{% url 'profile' follower.follower.show_data.screen_name %}">{{follower.follower.show_data.screen_name}}</a></td>
-        <td>{{ follower.follower.show_data.name }}</td>
-        <td>{{ follower.follower.get_gender_display }}</td>
-        <td>{{follower.follower.show_data.followers_count}}</td>
-      </tr>
-      {% endfor %}
+  <div style="width:100%; overflow:auto;">
+    <table id="profile-table-followers" class="display" cellspacing="0" width="100%">
+      <thead>
+        <tr>
+          <th>Username</th>
+          <th>Name</th>
+          <th>Inf. gender</th>
+          <th># Followers</th>
+        </tr>
+      </thead>
+      <tfoot>
+        <tr>
+          <th>Username</th>
+          <th>Name</th>
+          <th>Inf. gender</th>
+          <th># Followers</th>
+        </tr>
+      </tfoot>
     </table>
   </div>
 {% endblock content %}

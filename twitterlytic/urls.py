@@ -16,15 +16,24 @@ Including another URLconf
 from django.conf.urls import url
 from django.contrib import admin
 
-from .views import HomeView, LogoutView, TwitterReturnView, ProfileView, ProfileViewJSON
+from .views import (
+    HomeView, LogoutView, TwitterReturnView,
+    ProfileView, ProfileCountsJSON, ProfileFollowersJSON, ProfileFollowingJSON)
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^$', HomeView.as_view(), name='home'),
     url(r'^profile/(?P<slug>[a-z_A-Z0-9]*)/$', ProfileView.as_view(),
         name='profile'),
-    url(r'^profile/(?P<slug>[a-z_A-Z0-9]*)/json/$', ProfileViewJSON.as_view(),
-        name='profile-json'),
+    url(r'^profile/(?P<slug>[a-z_A-Z0-9]*)/counts.json$',
+        ProfileCountsJSON.as_view(),
+        name='profile-counts-json'),
+    url(r'^profile/(?P<slug>[a-z_A-Z0-9]*)/following-list.json$',
+        ProfileFollowingJSON.as_view(),
+        name='profile-following-list-json'),
+    url(r'^profile/(?P<slug>[a-z_A-Z0-9]*)/followers-list.json$',
+        ProfileFollowersJSON.as_view(),
+        name='profile-followers-list-json'),
     url(r'^logout/$', LogoutView.as_view(), name='logout'),
     url(r'^twitter_return/$', TwitterReturnView.as_view(),
         name='twitter_return'),
