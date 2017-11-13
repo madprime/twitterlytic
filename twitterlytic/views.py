@@ -65,10 +65,13 @@ class ProfileView(BaseProfileView):
 
 class ProfileCountsJSON(BaseProfileView):
     def render_to_response(self, context, **response_kwargs):
+        print('Number of followers: {}'.format(
+            TwitterRelationship.objects.filter(follower=self.object).count()))
         following_genders = list(
             TwitterRelationship.objects.filter(
                 follower=self.object).values_list(
                 'followed__gender', flat=True))
+        print(len(following_genders))
         following_counts = {g: following_genders.count(g) for g in
                             dict(GENDER_CHOICES).keys()}
         followers_genders = list(self.object.followed.values_list(

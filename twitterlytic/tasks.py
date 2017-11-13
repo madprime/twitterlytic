@@ -41,6 +41,9 @@ def bulk_profile_update(ids_list, auth_profile, target, reltype=None):
         elif reltype == 'follower':
             TwitterRelationship.objects.get_or_create(
                 followed=target, follower=profile)
+    if reltype == 'friend':
+        print('Number of friends: {}'.format(
+            TwitterRelationship.objects.filter(follower=target).count()))
 
 
 def update_connections(target_profile, auth_profile, reltype=None):
@@ -62,11 +65,12 @@ def update_connections(target_profile, auth_profile, reltype=None):
             if rel.follower.twitter_id not in target_profile.followers_ids:
                 rel.delete()
 
+    print(len(twitter_id_list))
     for twitter_id in twitter_id_list:
         profile, _ = TwitterProfile.objects.get_or_create(
             twitter_id=twitter_id)
         if ((not profile.last_show_refresh) or
-                (profile.last_show_refresh - timezone.now()).seconds > 86400):
+                (profile.last_show_refresh - timezone.now()).seconds > 0):
             ids_list.append(twitter_id)
         if len(ids_list) == 100:
             bulk_profile_update(ids_list=ids_list,
