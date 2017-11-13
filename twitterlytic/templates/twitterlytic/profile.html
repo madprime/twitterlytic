@@ -25,9 +25,15 @@
   </p>
 
   <p>
-    <b>Inferred gender:</b> {{ object.get_gender_display }}<br>
+    <b>Inferred gender:</b> {{ object.get_gender_display }}
+  </p>
+  <p>
     <b>Follower count:</b> {{ object.show_data.followers_count }}<br>
-    <b>Following count:</b> {{ object.show_data.friends_count }}
+    <b>Follower ratio (male:female):</b> {{ followers_ratio|floatformat:2 }}
+  </p>
+  <p>
+    <b>Following count:</b> {{ object.show_data.friends_count }}<br>
+    <b>Following ratio (male:female):</b> {{ following_ratio|floatformat:2 }}
   </p>
 
   {% if object.show_data.followers_count > max_display or object.show_data.friends_count > max_display %}

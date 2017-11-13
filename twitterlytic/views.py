@@ -16,6 +16,16 @@ from .utils import get_tweepy_auth
 User = get_user_model()
 
 
+def get_ratio(counts):
+    try:
+        ratio = (
+            (counts['male'] + counts['mostly_male']) /
+            (counts['female'] + counts['mostly_female']))
+    except ZeroDivisionError:
+        ratio = 0
+    return ratio
+
+
 class HomeView(TemplateView):
     """
     Main page.
@@ -52,6 +62,28 @@ class BaseProfileView(DetailView):
     model = TwitterProfile
     slug_field = 'username'
 
+    def get_context_data(self, *args, **kwargs):
+        context = super(
+            BaseProfileView, self).get_context_data(*args, **kwargs)
+        following_genders = list(
+            TwitterRelationship.objects.filter(
+                follower=self.object).values_list(
+                'followed__gender', flat=True))
+        following_counts = {g: following_genders.count(g) for g in
+                            dict(GENDER_CHOICES).keys()}
+        followers_genders = list(self.object.followed.values_list(
+            'follower__gender', flat=True))
+        followers_counts = {g: followers_genders.count(g) for g in
+                            dict(GENDER_CHOICES).keys()}
+
+        data = {'following_counts': following_counts,
+                'followers_counts': followers_counts,
+                'following_ratio': get_ratio(following_counts),
+                'followers_ratio': get_ratio(followers_counts),
+                }
+        context.update(data)
+        return context
+
 
 class ProfileView(BaseProfileView):
     def post(self, request, *args, **kwargs):
@@ -65,23 +97,9 @@ class ProfileView(BaseProfileView):
 
 class ProfileCountsJSON(BaseProfileView):
     def render_to_response(self, context, **response_kwargs):
-        print('Number of followers: {}'.format(
-            TwitterRelationship.objects.filter(follower=self.object).count()))
-        following_genders = list(
-            TwitterRelationship.objects.filter(
-                follower=self.object).values_list(
-                'followed__gender', flat=True))
-        print(len(following_genders))
-        following_counts = {g: following_genders.count(g) for g in
-                            dict(GENDER_CHOICES).keys()}
-        followers_genders = list(self.object.followed.values_list(
-            'follower__gender', flat=True))
-        followers_counts = {g: followers_genders.count(g) for g in
-                            dict(GENDER_CHOICES).keys()}
-
         data = {'profile': context['object'].serialized(),
-                'following_counts': following_counts,
-                'followers_counts': followers_counts}
+                'following_counts': context['following_counts'],
+                'followers_counts': context['followers_counts']}
         return JsonResponse(
             data,
             **response_kwargs
