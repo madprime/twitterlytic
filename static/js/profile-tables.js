@@ -8,6 +8,8 @@ $(document).ready(function() {
               return '<a href="/profile/'+data+'">'+data+'</a>';
             } },
           { "data": "name" },
+          { "data": "followers ratio"},
+          { "data": "following ratio"},
           { "data": "gender" },
           { "data": "followers" }
       ]
@@ -20,6 +22,8 @@ $(document).ready(function() {
               return '<a href="/profile/'+data+'">'+data+'</a>';
             } },
           { "data": "name" },
+          { "data": "followers ratio"},
+          { "data": "following ratio"},
           { "data": "gender" },
           { "data": "followers" }
       ]

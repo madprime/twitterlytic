@@ -110,6 +110,8 @@ class TwitterProfile(models.Model):
     followers = models.ManyToManyField(
         'self', through='TwitterRelationship', symmetrical=False,
         through_fields=('followed', 'follower'),)
+    friends_ratio = models.FloatField(null=True)
+    followers_ratio = models.FloatField(null=True)
     last_full_refresh = models.DateTimeField(null=True)
 
     def __str__(self):

@@ -7,19 +7,9 @@ import tweepy
 
 from .models import (TwitterProfile, TwitterRelationship, GENDER_CHOICES)
 from .tasks import get_followers_and_friends
-from .utils import get_tweepy_auth
+from .utils import get_ratio, get_tweepy_auth
 
 User = get_user_model()
-
-
-def get_ratio(counts):
-    try:
-        ratio = (
-            (counts['male'] + counts['mostly_male']) /
-            (counts['female'] + counts['mostly_female']))
-    except ZeroDivisionError:
-        ratio = 0
-    return ratio
 
 
 class HomeView(TemplateView):
@@ -61,21 +51,24 @@ class BaseProfileView(DetailView):
     def get_context_data(self, *args, **kwargs):
         context = super(
             BaseProfileView, self).get_context_data(*args, **kwargs)
-        following_genders = list(
-            TwitterRelationship.objects.filter(
-                follower=self.object).values_list(
+
+        following = TwitterRelationship.objects.filter(follower=self.object)
+        following_genders = list(following.values_list(
                 'followed__gender', flat=True))
         following_counts = {g: following_genders.count(g) for g in
                             dict(GENDER_CHOICES).keys()}
+        following_ratio = get_ratio(following_counts)
+
         followers_genders = list(self.object.followed.values_list(
             'follower__gender', flat=True))
         followers_counts = {g: followers_genders.count(g) for g in
                             dict(GENDER_CHOICES).keys()}
+        followers_ratio = get_ratio(followers_counts)
 
         data = {'following_counts': following_counts,
                 'followers_counts': followers_counts,
-                'following_ratio': get_ratio(following_counts),
-                'followers_ratio': get_ratio(followers_counts),
+                'following_ratio': following_ratio,
+                'followers_ratio': followers_ratio,
                 }
         context.update(data)
         return context
@@ -113,6 +106,12 @@ class ProfileFollowingJSON(BaseProfileView):
                 'id': str(id_idx),
                 'username': rel.followed.username,
                 'name': rel.followed.show_data['name'],
+                'followers ratio':
+                    (rel.followed.followers_ratio if
+                     rel.followed.followers_ratio else 'NA'),
+                'following ratio': (
+                    rel.followed.friends_ratio if
+                    rel.followed.friends_ratio else 'NA'),
                 'gender': rel.followed.gender,
                 'followers': str(rel.followed.show_data['followers_count']),
             })
@@ -133,6 +132,12 @@ class ProfileFollowersJSON(BaseProfileView):
                 'id': str(id_idx),
                 'username': rel.follower.username,
                 'name': rel.follower.show_data['name'],
+                'followers ratio':
+                    (rel.follower.followers_ratio if
+                     rel.follower.followers_ratio else 'NA'),
+                'following ratio': (
+                    rel.follower.friends_ratio if
+                    rel.follower.friends_ratio else 'NA'),
                 'gender': rel.follower.gender,
                 'followers': str(rel.follower.show_data['followers_count']),
             })
