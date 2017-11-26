@@ -58,9 +58,9 @@ def guess_gender(name, description):
         return 'male'
     elif 'they/them' in description.lower():
         return 'andy'
-    if name and name.split()[0].lower() == 'the':
-        return 'unknown'
     try:
+        if name.split()[0].lower() == 'the':
+            return 'unknown'
         return gender_guesser.get_gender(name.split()[0].title())
     except IndexError:
         return 'unknown'
