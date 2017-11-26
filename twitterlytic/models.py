@@ -1,4 +1,5 @@
 from datetime import timedelta
+import json
 from random import randint
 
 from django.conf import settings
@@ -146,7 +147,13 @@ class TwitterProfile(models.Model):
                 for error in req.json()['errors']:
                     if error['code'] == 88:
                         raise RateExceededError
-            print(req.json())
+                    if error['code'] == 89:
+                        authorizer.oauth_token = ''
+                        authorizer.oauth_token_secret = ''
+                        authorizer.save()
+                        return self.api_call(path, params=params)
+            print("Error for {} req: {}".format(
+                authorizer.username, json.dumps(req.json())))
             raise Exception
         query = TwitterQuery(querent=self, authorizer=authorizer, path=path,
                              params=params)
