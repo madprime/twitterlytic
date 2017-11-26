@@ -1,3 +1,6 @@
+from datetime import timedelta
+from random import randint
+
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.postgres.fields import ArrayField, JSONField
@@ -39,6 +42,13 @@ SHOW_DATA_LIST = [
     'withheld_in_countries', 'withheld_scope',
 ]
 
+TWITTER_CAPS = {
+    'followers/ids.json': 15,
+    'friends/ids.json': 15,
+    'users/show.json': 900,
+    'users/lookup.json': 900,
+}
+
 
 def guess_gender(name, description):
     if 'she/her' in description.lower():
@@ -47,10 +57,36 @@ def guess_gender(name, description):
         return 'male'
     elif 'they/them' in description.lower():
         return 'andy'
+    if name and name.split()[0].lower() == 'the':
+        return 'unknown'
     try:
         return gender_guesser.get_gender(name.split()[0].title())
     except IndexError:
         return 'unknown'
+
+
+def pick_authorizer(querent, path):
+    query_window_start = timezone.now() - timedelta(minutes=15)
+    choice_attempts = 0
+    authed_profiles = TwitterProfile.objects.exclude(oauth_token='')
+    while choice_attempts < 15:
+        if choice_attempts == 0:
+            authorizer = querent
+        else:
+            random_index = randint(0, authed_profiles.count() - 1)
+            authorizer = authed_profiles[random_index]
+        count = TwitterQuery.objects.filter(authorizer=authorizer).filter(
+            timestamp__gt=query_window_start).filter(
+            path=path).count()
+        cap = 15 if path not in TWITTER_CAPS else TWITTER_CAPS[path]
+        if authorizer.id != querent.id:
+            cap = int(0.5 * cap)
+        if count < cap:
+            return authorizer
+        print('ROUND {} fail :: For {} {}, tried {}. {} / {}'.format(
+            choice_attempts, querent, path, authorizer, authorizer.id,
+            count, cap))
+        choice_attempts += 1
 
 
 class TwitterProfile(models.Model):
@@ -76,6 +112,9 @@ class TwitterProfile(models.Model):
         through_fields=('followed', 'follower'),)
     last_full_refresh = models.DateTimeField(null=True)
 
+    def __str__(self):
+        return(self.username)
+
     def serialized(self):
         return {
             'twitter_id': self.twitter_id,
@@ -92,13 +131,14 @@ class TwitterProfile(models.Model):
             self.oauth_token,
             self.oauth_token_secret,)
 
-    def api_call(self, path, params={}, auth=None):
-        if not auth:
-            auth = self.get_auth()
+    def api_call(self, path, params={}):
+        authorizer = pick_authorizer(self, path)
+        if not authorizer:
+            raise RateExceededError
         req = requests.get(
             'https://api.twitter.com/1.1/' + path,
             params=params,
-            auth=self.get_auth())
+            auth=authorizer.get_auth())
         if req.status_code != 200:
             if 'errors' in req.json():
                 for error in req.json()['errors']:
@@ -106,6 +146,9 @@ class TwitterProfile(models.Model):
                         raise RateExceededError
             print(req.json())
             raise Exception
+        query = TwitterQuery(querent=self, authorizer=authorizer, path=path,
+                             params=params)
+        query.save()
         return req
 
     def refresh_show_data(self, auth_profile, data=None, max_sec_stale=0):
@@ -117,7 +160,6 @@ class TwitterProfile(models.Model):
             req = auth_profile.api_call(
                 path='users/show.json',
                 params={'user_id': self.twitter_id},
-                auth=auth_profile.get_auth(),
                 )
             data = req.json()
         results = {k: data[k] for k in data.keys() if k in SHOW_DATA_LIST}
@@ -137,7 +179,6 @@ class TwitterProfile(models.Model):
             req = auth_profile.api_call(
                 path='{}/ids.json'.format(ids_type),
                 params={'user_id': self.twitter_id, 'cursor': cursor},
-                auth=auth_profile.get_auth(),
                 )
             data = req.json()
             ids = ids + data['ids']
@@ -181,3 +222,16 @@ class TwitterRelationship(models.Model):
 
     class Meta:
         unique_together = ('followed', 'follower',)
+
+    def __str__(self):
+        return('{} --> {}'.format(
+            self.follower.username, self.followed.username))
+
+
+class TwitterQuery(models.Model):
+    querent = models.ForeignKey(TwitterProfile, related_name='querent_query')
+    authorizer = models.ForeignKey(
+        TwitterProfile, related_name='authorizer_query')
+    path = models.TextField()
+    params = JSONField(default={})
+    timestamp = models.DateTimeField(auto_now_add=True)

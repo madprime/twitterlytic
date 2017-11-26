@@ -1,6 +1,3 @@
-import copy
-
-from django.conf import settings
 from django.contrib.auth import get_user_model, login, logout
 from django.core.urlresolvers import reverse_lazy
 from django.http import HttpResponseRedirect, JsonResponse
@@ -8,8 +5,7 @@ from django.views.generic import DetailView, TemplateView, View
 
 import tweepy
 
-from .models import (TwitterProfile, TwitterRelationship, GENDER_CHOICES,
-                     GENDER_COUNTS_BLANK)
+from .models import (TwitterProfile, TwitterRelationship, GENDER_CHOICES)
 from .tasks import get_followers_and_friends
 from .utils import get_tweepy_auth
 

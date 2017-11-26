@@ -20,6 +20,15 @@
   </form>
   </p>
   {% else %}
+  <p>
+    <b>Connect to analyze your profile and others!</b>
+  </p>
+  <p>
+    If you connect, you'll automatically trigger an analysis of your
+    own Twitter account. You'll also have the option to trigger analyses
+    for any Twitter accounts already known to Twitterlytic (i.e. any profile
+    following or followed by any profile analyzed to date).
+  </p>
   <a class="btn btn-primary btn-lg" href="{{ twitter_auth_url }}">
     Connect Twitter</a>
 {% endif %}
